@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:hotel/data/models/user.dart';
 import 'package:hotel/data/models/room.dart';
 import 'package:hotel/data/models/reservation.dart';
@@ -7,7 +7,7 @@ import 'package:hotel/data/models/service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
 
   // Users
   Future<User> getUserData(String uid) async {

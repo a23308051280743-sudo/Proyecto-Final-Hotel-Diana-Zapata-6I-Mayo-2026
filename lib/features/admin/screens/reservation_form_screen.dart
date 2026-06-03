@@ -138,7 +138,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Text('Check-in: ${_checkIn.toDate()}'),
+                  child: Text('Check-in: ${_checkIn.toString().split(' ')[0]}'),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -152,7 +152,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Text('Check-out: ${_checkOut.toDate()}'),
+                  child: Text('Check-out: ${_checkOut.toString().split(' ')[0]}'),
                 ),
                 TextButton(
                   onPressed: () async {

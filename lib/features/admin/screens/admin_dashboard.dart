@@ -87,7 +87,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 _buildDashboardItem(
                   context,
                   'Services',
-                  Icons.concierge_bell,
+                  Icons.hotel,
                   const ServicesAdminScreen(),
                 ),
               ],

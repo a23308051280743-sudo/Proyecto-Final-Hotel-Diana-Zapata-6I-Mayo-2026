@@ -57,7 +57,7 @@ class _ReservationsAdminScreenState extends State<ReservationsAdminScreen> {
               final res = reservations[index];
               return ListTile(
                 title: Text('${res.guestName} - ${res.roomName}'),
-                subtitle: Text('Status: ${res.status} | Check-in: ${res.checkIn.toDate()}'),
+                subtitle: Text('Status: ${res.status} | Check-in: ${res.checkIn.toString().split(' ')[0]}'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
