@@ -5,13 +5,13 @@ import 'package:hotel/data/models/reservation.dart';
 import 'package:hotel/data/services/firestore_service.dart';
 import 'package:hotel/widgets/reservation_card.dart';
 import 'package:hotel/widgets/empty_state.dart';
+import 'package:hotel/features/auth/auth_provider.dart';
 
 class MyReservationsScreen extends StatelessWidget {
   const MyReservationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
 
     return DefaultTabController(
       length: 3,
@@ -45,10 +45,11 @@ class _ReservationList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     final statuses = statusFilter.split(',');
 
     return FutureBuilder<List<Reservation>>(
-      future: firestoreService.getMyReservations('currentUserUid'), // Replace with real UID
+      future: firestoreService.getMyReservations(auth.currentUid),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
@@ -63,7 +64,7 @@ class _ReservationList extends StatelessWidget {
           itemBuilder: (context, index) {
             return ReservationCard(
               reservation: filtered[index],
-              onViewDetail: () => context.go('/reservations/${filtered[index].reservationId}'),
+              onViewDetail: () => context.push('/reservations/${filtered[index].reservationId}'),
             );
           },
         );

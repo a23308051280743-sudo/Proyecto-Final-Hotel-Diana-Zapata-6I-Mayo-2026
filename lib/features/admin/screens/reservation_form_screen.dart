@@ -93,6 +93,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
       children: _children,
       specialRequests: _specialRequestsController.text,
       createdAt: widget.reservation?.createdAt ?? DateTime.now(),
+      services: widget.reservation?.services ?? const [],
     );
 
     try {
@@ -103,6 +104,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving reservation: $e')));
     }
   }
@@ -129,7 +131,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
               validator: (value) => value == null || value.isEmpty ? 'Please enter user ID' : null,
             ),
             DropdownButtonFormField<Room>(
-              value: _selectedRoom,
+              initialValue: _selectedRoom,
               items: _rooms.map((room) => DropdownMenuItem(value: room, child: Text(room.name))).toList(),
               onChanged: (val) => setState(() => _selectedRoom = val),
               decoration: const InputDecoration(labelText: 'Room'),
@@ -190,7 +192,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              value: _status,
+              initialValue: _status,
               items: ['pending', 'confirmed', 'cancelled', 'completed'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (val) => setState(() => _status = val!),
               decoration: const InputDecoration(labelText: 'Status'),

@@ -5,8 +5,8 @@ import 'package:hotel/data/models/room.dart';
 import 'package:hotel/data/models/reservation.dart';
 import 'package:hotel/data/services/firestore_service.dart';
 import 'package:hotel/widgets/primary_button.dart';
-import 'package:hotel/widgets/confirm_dialog.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hotel/features/auth/auth_provider.dart';
+
 
 class CreateReservationScreen extends StatefulWidget {
   final String roomId;
@@ -135,7 +135,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
 
                 // Summary Card
                 Card(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -173,6 +173,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                     }
 
                     setState(() => _isLoading = true);
+                    final auth = Provider.of<AuthProvider>(context, listen: false);
 
                     final available = await firestoreService.checkAvailability(
                       roomId: room.roomId,
@@ -182,16 +183,17 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
 
                     if (!available) {
                       setState(() => _isLoading = false);
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La habitación no está disponible para las fechas seleccionadas')));
                       return;
                     }
 
                     final reservation = Reservation(
                       reservationId: '', // Firestore auto-generates
-                      userId: 'currentUserUid', // Replace with real UID
+                      userId: auth.currentUid,
                       roomId: room.roomId,
                       roomName: room.name,
-                      guestName: 'Current User Name', // Replace with real name
+                      guestName: auth.currentUser?.name ?? 'Huésped',
                       checkIn: _checkIn!,
                       checkOut: _checkOut!,
                       nights: _nights,
@@ -214,9 +216,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

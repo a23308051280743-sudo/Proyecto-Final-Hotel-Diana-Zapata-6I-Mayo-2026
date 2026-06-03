@@ -21,7 +21,10 @@ class ReservationDetailScreen extends StatelessWidget {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final res = snapshot.data!;
 
-          return Padding(
+          final servicesTotal = res.services.fold<double>(0.0, (sum, svc) => sum + ((svc['price'] as num?)?.toDouble() ?? 0.0));
+          final roomTotal = res.totalPrice - servicesTotal;
+
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,9 +36,41 @@ class ReservationDetailScreen extends StatelessWidget {
                 _DetailItem(label: 'Check-out', value: res.checkOut.toString().split(' ')[0]),
                 _DetailItem(label: 'Noches', value: res.nights.toString()),
                 _DetailItem(label: 'Huéspedes', value: '${res.adults} adultos, ${res.children} niños'),
-                _DetailItem(label: 'Total Pagado', value: '\$${res.totalPrice}'),
-                if (res.specialRequests != null) _DetailItem(label: 'Solicitudes', value: res.specialRequests!),
-                const Spacer(),
+                if (res.specialRequests != null && res.specialRequests!.isNotEmpty)
+                  _DetailItem(label: 'Solicitudes', value: res.specialRequests!),
+                
+                const SizedBox(height: 24),
+                const Text('Detalle de Cargos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Divider(),
+                _DetailItem(label: 'Costo de Habitación', value: '\$${roomTotal.toStringAsFixed(2)}'),
+                
+                if (res.services.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('Servicios Adicionales:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  ...res.services.map((svc) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(svc['name'] ?? '', style: const TextStyle(fontSize: 13)),
+                        Text('\$${(svc['price'] as num?)?.toDouble().toStringAsFixed(2) ?? "0.00"}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  )),
+                ],
+                const Divider(),
+                _DetailItem(
+                  label: 'Total General', 
+                  value: '\$${res.totalPrice.toStringAsFixed(2)}',
+                  valueStyle: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold, 
+                    color: Theme.of(context).colorScheme.primary
+                  ),
+                ),
+                
+                const SizedBox(height: 40),
                 if (res.status == 'pending' || res.status == 'confirmed')
                   SizedBox(
                     width: double.infinity,
@@ -50,6 +85,10 @@ class ReservationDetailScreen extends StatelessWidget {
                             confirmText: 'Cancelar',
                             onConfirm: () async {
                               await firestoreService.cancelReservation(res.reservationId);
+                              if (context.mounted) {
+                                Navigator.pop(context); // Cerrar diálogo
+                                Navigator.pop(context); // Regresar de la pantalla de detalle para actualizar
+                              }
                             },
                           ),
                         );
@@ -74,7 +113,8 @@ class ReservationDetailScreen extends StatelessWidget {
 class _DetailItem extends StatelessWidget {
   final String label;
   final String value;
-  const _DetailItem({required this.label, required this.value});
+  final TextStyle? valueStyle;
+  const _DetailItem({required this.label, required this.value, this.valueStyle});
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +124,7 @@ class _DetailItem extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value, style: valueStyle ?? const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );

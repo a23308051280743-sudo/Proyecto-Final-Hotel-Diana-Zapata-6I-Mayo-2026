@@ -4,8 +4,14 @@ import 'package:hotel/data/models/room.dart';
 class RoomCard extends StatelessWidget {
   final Room room;
   final VoidCallback onSeeMore;
+  final double imageHeight;
 
-  const RoomCard({super.key, required this.room, required this.onSeeMore});
+  const RoomCard({
+    super.key,
+    required this.room,
+    required this.onSeeMore,
+    this.imageHeight = 160,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,8 +23,8 @@ class RoomCard extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: room.imageUrls.isNotEmpty
-                ? Image.network(room.imageUrls[0], height: 200, width: double.infinity, fit: BoxFit.cover)
-                : Container(height: 200, color: Colors.grey, child: const Icon(Icons.bed, size: 50)),
+                ? Image.network(room.imageUrls[0], height: imageHeight, width: double.infinity, fit: BoxFit.cover)
+                : Container(height: imageHeight, color: Colors.grey, child: const Icon(Icons.bed, size: 50)),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -28,26 +34,35 @@ class RoomCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(room.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Text(
+                        room.name,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text('\$${room.pricePerNight}/noche', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                   ],
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(room.type, style: TextStyle(color: Colors.grey[600])),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     const Icon(Icons.people, size: 16, color: Colors.grey),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text('Capacidad: ${room.capacity} personas', style: const TextStyle(fontSize: 14)),
                   ],
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
-                  children: room.amenities.take(3).map((a) => Chip(label: Text(a, style: const TextStyle(fontSize: 12)))).toList(),
+                  runSpacing: 4,
+                  children: room.amenities.take(3).map((a) => CompactChip(label: a)).toList(),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
@@ -60,6 +75,27 @@ class RoomCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CompactChip extends StatelessWidget {
+  final String label;
+  const CompactChip({super.key, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, color: Colors.grey[800]),
       ),
     );
   }

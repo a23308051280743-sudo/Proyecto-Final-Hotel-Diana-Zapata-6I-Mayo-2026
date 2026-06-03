@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:hotel/data/models/user.dart';
 import 'package:hotel/data/models/room.dart';
 import 'package:hotel/data/models/reservation.dart';
@@ -7,7 +6,6 @@ import 'package:hotel/data/models/service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
 
   // Users
   Future<User> getUserData(String uid) async {
@@ -17,7 +15,7 @@ class FirestoreService {
 
   Future<List<User>> getAllUsers() async {
     final snapshot = await _db.collection('users').get();
-    return snapshot.docs.map((doc) => User.fromMap(doc.data()!)).toList();
+    return snapshot.docs.map((doc) => User.fromMap(doc.data())).toList();
   }
 
   Future<void> updateUserData(String uid, Map<String, dynamic> data) async {
@@ -35,7 +33,7 @@ class FirestoreService {
   // Rooms
   Future<List<Room>> getRooms() async {
     final snapshot = await _db.collection('rooms').get();
-    return snapshot.docs.map((doc) => Room.fromMap({...doc.data()!, 'roomId': doc.id})).toList();
+    return snapshot.docs.map((doc) => Room.fromMap({...doc.data(), 'roomId': doc.id})).toList();
   }
 
   Future<Room> getRoom(String roomId) async {
@@ -57,18 +55,19 @@ class FirestoreService {
 
   // Reservations
   Future<List<Reservation>> getAllReservations() async {
-    final snapshot = await _db.collection('reservations')
-        .orderBy('createdAt', descending: true)
-        .get();
-    return snapshot.docs.map((doc) => Reservation.fromMap({...doc.data()!, 'reservationId': doc.id})).toList();
+    final snapshot = await _db.collection('reservations').get();
+    final reservations = snapshot.docs.map((doc) => Reservation.fromMap({...doc.data(), 'reservationId': doc.id})).toList();
+    reservations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return reservations;
   }
 
   Future<List<Reservation>> getMyReservations(String userId) async {
     final snapshot = await _db.collection('reservations')
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs.map((doc) => Reservation.fromMap({...doc.data()!, 'reservationId': doc.id})).toList();
+    final reservations = snapshot.docs.map((doc) => Reservation.fromMap({...doc.data(), 'reservationId': doc.id})).toList();
+    reservations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return reservations;
   }
 
   Future<Reservation> getReservation(String reservationId) async {
@@ -95,7 +94,7 @@ class FirestoreService {
   // Services
   Future<List<HotelService>> getServices() async {
     final snapshot = await _db.collection('services').get();
-    return snapshot.docs.map((doc) => HotelService.fromMap({...doc.data()!, 'serviceId': doc.id})).toList();
+    return snapshot.docs.map((doc) => HotelService.fromMap({...doc.data(), 'serviceId': doc.id})).toList();
   }
 
   Future<void> createService(HotelService service) async {
@@ -110,7 +109,33 @@ class FirestoreService {
     await _db.collection('services').doc(serviceId).delete();
   }
 
+  Future<void> addServiceToReservation(String reservationId, HotelService service) async {
+    final docRef = _db.collection('reservations').doc(reservationId);
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) throw Exception("Reserva no encontrada");
+      final data = snapshot.data()!;
+      
+      final servicesList = List<Map<String, dynamic>>.from(data['services'] ?? []);
+      servicesList.add({
+        'serviceId': service.serviceId,
+        'name': service.name,
+        'price': service.price,
+        'addedAt': Timestamp.now(),
+      });
+      
+      final double currentTotal = (data['totalPrice'] as num).toDouble();
+      final double newTotal = currentTotal + service.price;
+      
+      transaction.update(docRef, {
+        'services': servicesList,
+        'totalPrice': newTotal,
+      });
+    });
+  }
 
+
+  // Stats
   // Stats
   Future<Map<String, dynamic>> getAdminStats() async {
     final now = DateTime.now();
@@ -126,11 +151,11 @@ class FirestoreService {
 
     for (var doc in reservations) {
       final data = doc.data();
-      final status = data['status'] as String;
-      final checkIn = (data['checkIn'] as Timestamp).toDate();
-      final checkOut = (data['checkOut'] as Timestamp).toDate();
-      final totalPrice = (data['totalPrice'] as num).toDouble();
-      final createdAt = (data['createdAt'] as Timestamp).toDate();
+      final status = data['status']?.toString() ?? 'pending';
+      final checkIn = Reservation.parseDateTime(data['checkIn']);
+      final checkOut = Reservation.parseDateTime(data['checkOut']);
+      final totalPrice = (data['totalPrice'] as num?)?.toDouble() ?? 0.0;
+      final createdAt = Reservation.parseDateTime(data['createdAt']);
 
       if (status == 'pending' || status == 'confirmed') {
         activeReservations++;
@@ -161,13 +186,15 @@ class FirestoreService {
   }) async {
     final query = await _db.collection('reservations')
         .where('roomId', isEqualTo: roomId)
-        .where('status', whereIn: ['pending', 'confirmed'])
         .get();
 
     for (final doc in query.docs) {
       final data = doc.data();
-      final existingCheckIn = (data['checkIn'] as Timestamp).toDate();
-      final existingCheckOut = (data['checkOut'] as Timestamp).toDate();
+      final status = data['status']?.toString() ?? 'pending';
+      if (status != 'pending' && status != 'confirmed') continue;
+
+      final existingCheckIn = Reservation.parseDateTime(data['checkIn']);
+      final existingCheckOut = Reservation.parseDateTime(data['checkOut']);
 
       // Hay solapamiento si: nueva checkIn < existente checkOut
       //                   Y nueva checkOut > existente checkIn

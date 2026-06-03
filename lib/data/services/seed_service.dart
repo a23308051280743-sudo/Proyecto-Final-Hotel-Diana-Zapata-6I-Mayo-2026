@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:hotel/data/models/room.dart';
 import 'package:hotel/data/models/service.dart';
 import 'package:hotel/data/services/firestore_service.dart';
@@ -127,7 +127,7 @@ class SeedService {
         description: 'Gastronomía de alta calidad entregada directamente en su habitación.',
         price: 0.0,
         category: 'food',
-        imageUrl: 'https://images.unsplash.com/photo-15209383y20-c31c824b6424?q=80&w=1000', // Fixed URL
+        imageUrl: 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?q=80&w=1000',
         isActive: true,
       ),
       HotelService(

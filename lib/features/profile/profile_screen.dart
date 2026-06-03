@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hotel/data/models/user.dart';
 import 'package:hotel/data/services/firestore_service.dart';
+import 'package:hotel/features/auth/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,11 +21,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final uid = auth.currentUid;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mi Perfil')),
       body: FutureBuilder<User>(
-        future: firestoreService.getUserData('currentUserUid'), // Replace with real UID
+        future: firestoreService.getUserData(uid),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final user = snapshot.data!;
@@ -66,11 +70,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : () async {
                       setState(() => _isLoading = true);
-                      await firestoreService.updateUserData('currentUserUid', {
+                      await firestoreService.updateUserData(uid, {
                         'name': _nameController.text,
                         'phone': _phoneController.text,
                       });
                       setState(() => _isLoading = false);
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfil actualizado')));
                     },
                     style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white),
@@ -87,13 +92,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
                   title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
-                  onTap: () {},
+                  onTap: () async {
+                    await auth.logout();
+                    if (context.mounted) context.go('/home-public');
+                  },
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
+
   }
 }

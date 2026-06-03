@@ -70,8 +70,8 @@ class RoomDetailScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
       bottomSheet: Padding(
         padding: const EdgeInsets.all(16),
@@ -82,8 +82,8 @@ class RoomDetailScreen extends StatelessWidget {
             return PrimaryButton(
               text: isAuthenticated ? 'RESERVAR AHORA' : 'Inicia sesión para reservar',
               onPressed: isAuthenticated
-                ? () => context.go('/reservations/new?roomId=$roomId')
-                : () => context.go('/login'),
+                ? () => context.push('/reservations/new?roomId=$roomId')
+                : () => context.push('/login'),
             );
           },
         ),

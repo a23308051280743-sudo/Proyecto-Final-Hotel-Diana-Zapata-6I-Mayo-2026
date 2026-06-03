@@ -60,6 +60,7 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving service: $e')));
     }
   }

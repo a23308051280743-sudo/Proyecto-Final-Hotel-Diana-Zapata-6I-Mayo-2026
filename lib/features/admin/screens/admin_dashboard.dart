@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hotel/features/admin/screens/rooms_admin_screen.dart';
 import 'package:hotel/features/admin/screens/reservations_admin_screen.dart';
 import 'package:hotel/features/admin/screens/users_admin_screen.dart';
 import 'package:hotel/features/admin/screens/services_admin_screen.dart';
 import 'package:hotel/data/services/seed_service.dart';
 import 'package:hotel/data/services/firestore_service.dart';
+import 'package:hotel/features/auth/auth_provider.dart';
+import 'package:hotel/core/theme/app_theme.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,6 +20,7 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   final FirestoreService _firestoreService = FirestoreService();
   Map<String, dynamic>? _stats;
+  bool _isSeeding = false;
 
   @override
   void initState() {
@@ -30,17 +35,65 @@ class _AdminDashboardState extends State<AdminDashboard> {
     });
   }
 
-  Future<void> _handleSeedData(BuildContext context) async {
+  Future<void> _confirmAndSeed() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.storage_rounded, color: AppTheme.primaryRed),
+            const SizedBox(width: 12),
+            const Text('Sembrar Datos'),
+          ],
+        ),
+        content: const Text(
+          '¿Deseas insertar los datos iniciales en la base de datos?\n\n'
+          'Esto creará habitaciones y servicios de ejemplo. '
+          'Si ya existen datos, podrían duplicarse.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('CANCELAR'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryRed,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('CONFIRMAR'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isSeeding = true);
+
     try {
       await SeedService().seedDatabase();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Database seeded successfully!')),
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('✅ Datos sembrados exitosamente'),
+          backgroundColor: Colors.green,
+        ),
       );
       await _loadStats();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error seeding database: $e')),
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('❌ Error al sembrar datos: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
+    } finally {
+      if (mounted) setState(() => _isSeeding = false);
     }
   }
 
@@ -48,11 +101,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: const Text('Panel de Administración'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadStats,
+            tooltip: 'Actualizar estadísticas',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            onPressed: () async {
+              final auth = Provider.of<AuthProvider>(context, listen: false);
+              await auth.logout();
+              if (context.mounted) context.go('/home-public');
+            },
+            tooltip: 'Cerrar sesión',
           ),
         ],
       ),
@@ -68,41 +131,55 @@ class _AdminDashboardState extends State<AdminDashboard> {
               children: [
                 _buildDashboardItem(
                   context,
-                  'Rooms',
+                  'Habitaciones',
                   Icons.hotel,
                   const RoomsAdminScreen(),
                 ),
                 _buildDashboardItem(
                   context,
-                  'Reservations',
+                  'Reservaciones',
                   Icons.calendar_today,
                   const ReservationsAdminScreen(),
                 ),
                 _buildDashboardItem(
                   context,
-                  'Users',
+                  'Usuarios',
                   Icons.people,
                   const UsersAdminScreen(),
                 ),
                 _buildDashboardItem(
                   context,
-                  'Services',
-                  Icons.hotel,
+                  'Servicios',
+                  Icons.room_service_outlined,
                   const ServicesAdminScreen(),
                 ),
               ],
             ),
           ),
+          // Seed Data Button with confirmation dialog
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () => _handleSeedData(context),
+            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
+            child: ElevatedButton.icon(
+              onPressed: _isSeeding ? null : () => _confirmAndSeed(),
+              icon: _isSeeding
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.storage_rounded),
+              label: Text(_isSeeding ? 'SEMBRANDO DATOS...' : 'SEMBRAR DATOS INICIALES'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
+                backgroundColor: const Color(0xFF455A64),
                 foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('SEED INITIAL DATA'),
             ),
           ),
         ],
@@ -117,9 +194,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('Active', _stats?['activeReservations'].toString() ?? '0'),
-          _buildStatItem('Today', _stats?['occupiedToday'].toString() ?? '0'),
-          _buildStatItem('Month', '\$${_stats?['monthlyRevenue']?.toStringAsFixed(2) ?? '0.00'}'),
+          _buildStatItem('Activas', _stats?['activeReservations'].toString() ?? '0'),
+          _buildStatItem('Hoy', _stats?['occupiedToday'].toString() ?? '0'),
+          _buildStatItem('Mes', '\$${_stats?['monthlyRevenue']?.toStringAsFixed(2) ?? '0.00'}'),
         ],
       ),
     );

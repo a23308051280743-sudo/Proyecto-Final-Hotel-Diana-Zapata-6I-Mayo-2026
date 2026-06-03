@@ -73,6 +73,7 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving room: $e')));
     }
   }

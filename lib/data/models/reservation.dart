@@ -15,6 +15,7 @@ class Reservation {
   final int children;
   final String? specialRequests;
   final DateTime createdAt;
+  final List<Map<String, dynamic>> services;
 
   Reservation({
     required this.reservationId,
@@ -31,7 +32,20 @@ class Reservation {
     required this.children,
     this.specialRequests,
     required this.createdAt,
+    this.services = const [],
   });
+
+  static DateTime parseDateTime(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    } else if (value is DateTime) {
+      return value;
+    } else {
+      return DateTime.now();
+    }
+  }
 
   factory Reservation.fromMap(Map<String, dynamic> map) {
     return Reservation(
@@ -40,15 +54,19 @@ class Reservation {
       roomId: map['roomId'] ?? '',
       roomName: map['roomName'] ?? '',
       guestName: map['guestName'] ?? '',
-      checkIn: (map['checkIn'] as Timestamp).toDate(),
-      checkOut: (map['checkOut'] as Timestamp).toDate(),
-      nights: map['nights'] ?? 0,
-      totalPrice: (map['totalPrice'] as num).toDouble(),
+      checkIn: parseDateTime(map['checkIn']),
+      checkOut: parseDateTime(map['checkOut']),
+      nights: (map['nights'] as num?)?.toInt() ?? 0,
+      totalPrice: (map['totalPrice'] as num?)?.toDouble() ?? 0.0,
       status: map['status'] ?? 'pending',
-      adults: map['adults'] ?? 0,
-      children: map['children'] ?? 0,
+      adults: (map['adults'] as num?)?.toInt() ?? 0,
+      children: (map['children'] as num?)?.toInt() ?? 0,
       specialRequests: map['specialRequests'],
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: parseDateTime(map['createdAt']),
+      services: (map['services'] as List<dynamic>?)
+              ?.map((item) => Map<String, dynamic>.from(item as Map))
+              .toList() ??
+          const [],
     );
   }
 
@@ -68,6 +86,7 @@ class Reservation {
       'children': children,
       'specialRequests': specialRequests,
       'createdAt': Timestamp.fromDate(createdAt),
+      'services': services,
     };
   }
 }

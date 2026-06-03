@@ -73,7 +73,7 @@ class HomePublic extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.push('/login'),
+                onPressed: () => context.push('/admin-login'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.darkRed,
                   foregroundColor: Colors.white,

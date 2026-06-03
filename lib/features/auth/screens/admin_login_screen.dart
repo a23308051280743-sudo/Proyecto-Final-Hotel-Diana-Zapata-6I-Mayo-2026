@@ -2,22 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
-import '../../../core/theme/app_theme.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _AdminLoginScreenState extends State<AdminLoginScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
+
+  // Premium colors for Admin: dark slate and luxury gold
+  final Color adminDarkBg = const Color(0xFF1E2022);
+  final Color adminGold = const Color(0xFFD4AF37);
+  final Color adminCardBg = const Color(0xFF2C2E30);
 
   @override
   void initState() {
@@ -40,11 +44,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleAdminLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final success = await auth.login(
+    final success = await auth.loginAsAdmin(
       _emailController.text,
       _passwordController.text,
     );
@@ -53,14 +57,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('¡Bienvenido de nuevo!'),
-            backgroundColor: Colors.green,
+            content: Text('Acceso concedido. Panel de Administración.'),
+            backgroundColor: Colors.amber,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(auth.errorMessage ?? 'Error al iniciar sesión'),
+            content: Text(auth.errorMessage ?? 'Error de autenticación de administrador'),
             backgroundColor: Colors.red,
           ),
         );
@@ -70,9 +74,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: adminDarkBg,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeInAnimation,
@@ -87,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Elegant Hotel Logo Container
+                      // Elegant Hotel Admin Logo
                       Center(
                         child: Column(
                           children: [
@@ -97,49 +100,44 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppTheme.primaryRed,
+                                  color: adminGold,
                                   width: 2,
                                 ),
-                                color: Colors.white,
+                                color: Colors.black,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryRed.withValues(alpha: 0.1),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
+                                    color: adminGold.withValues(alpha: 0.2),
+                                    blurRadius: 15,
+                                    spreadRadius: 3,
                                   ),
                                 ],
                               ),
-                              child: const Center(
-                                child: Text(
-                                  'H',
-                                  style: TextStyle(
-                                    fontFamily: 'Playfair Display',
-                                    fontSize: 42,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryRed,
-                                    letterSpacing: 1.5,
-                                  ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.admin_panel_settings,
+                                  size: 40,
+                                  color: adminGold,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'LUXURY MOONSEA',
+                            Text(
+                              'ADMINISTRACIÓN',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
-                                letterSpacing: 3.0,
-                                color: AppTheme.textDark,
+                                letterSpacing: 4.0,
+                                color: adminGold,
                               ),
                             ),
                             const SizedBox(height: 6),
                             const Text(
-                              'HOTEL & SPA',
+                              'LUXURY MOONSEA',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 4.0,
-                                color: AppTheme.textMuted,
+                                color: Colors.grey,
                               ),
                             ),
                           ],
@@ -149,8 +147,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                       // Card carrying form elements
                       Card(
-                        elevation: 4,
-                        shadowColor: Colors.black.withValues(alpha: 0.05),
+                        color: adminCardBg,
+                        elevation: 6,
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -160,11 +159,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const Text(
-                                'Iniciar Sesión',
+                                'Ingreso Panel de Control',
                                 style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.textDark,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -174,18 +173,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
+                                style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   labelText: 'Correo Electrónico',
-                                  prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.textMuted),
+                                  labelStyle: const TextStyle(color: Colors.grey),
+                                  prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFF1E2022),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!),
+                                    borderSide: BorderSide(color: Colors.grey[800]!),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!),
+                                    borderSide: BorderSide(color: Colors.grey[800]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: adminGold, width: 2),
                                   ),
                                 ),
                                 validator: (value) {
@@ -205,13 +210,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
+                                style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   labelText: 'Contraseña',
-                                  prefixIcon: const Icon(Icons.lock_outlined, color: AppTheme.textMuted),
+                                  labelStyle: const TextStyle(color: Colors.grey),
+                                  prefixIcon: const Icon(Icons.lock_outlined, color: Colors.grey),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                      color: AppTheme.textMuted,
+                                      color: Colors.grey,
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -220,22 +227,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     },
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: const Color(0xFF1E2022),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!),
+                                    borderSide: BorderSide(color: Colors.grey[800]!),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!),
+                                    borderSide: BorderSide(color: Colors.grey[800]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: adminGold, width: 2),
                                   ),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Por favor ingrese su contraseña';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'La contraseña debe tener al menos 6 caracteres';
                                   }
                                   return null;
                                 },
@@ -246,10 +254,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               Consumer<AuthProvider>(
                                 builder: (context, auth, _) {
                                   return ElevatedButton(
-                                    onPressed: auth.isLoading ? null : _handleLogin,
+                                    onPressed: auth.isLoading ? null : _handleAdminLogin,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.primaryRed,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: adminGold,
+                                      foregroundColor: Colors.black,
                                       minimumSize: const Size(double.infinity, 54),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -262,11 +270,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                             width: 24,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2.5,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                                             ),
                                           )
                                         : const Text(
-                                            'INICIAR SESIÓN',
+                                            'INGRESAR PANEL',
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
@@ -280,40 +288,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
-                      // Navigation Options
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            '¿No tienes cuenta? ',
-                            style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
-                          ),
-                          GestureDetector(
-                            onTap: () => context.push('/register'),
-                            child: const Text(
-                              'Regístrate aquí',
-                              style: TextStyle(
-                                color: AppTheme.primaryRed,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      
+                      // Back to Public/User Login Link
                       Center(
                         child: TextButton.icon(
-                          onPressed: () => context.push('/admin-login'),
-                          icon: const Icon(Icons.admin_panel_settings_outlined, size: 18, color: AppTheme.primaryRed),
+                          onPressed: () => context.go('/login'),
+                          icon: const Icon(Icons.arrow_back, size: 16, color: Colors.grey),
                           label: const Text(
-                            'Acceso Administrador',
+                            'Volver al ingreso de clientes',
                             style: TextStyle(
-                              color: AppTheme.primaryRed,
+                              color: Colors.grey,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),

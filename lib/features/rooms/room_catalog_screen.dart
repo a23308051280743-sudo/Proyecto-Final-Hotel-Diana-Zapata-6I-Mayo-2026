@@ -63,7 +63,7 @@ class _RoomCatalogScreenState extends State<RoomCatalogScreen> {
                   itemBuilder: (context, index) {
                     return RoomCard(
                       room: rooms[index],
-                      onSeeMore: () => context.go('/rooms/${rooms[index].roomId}'),
+                      onSeeMore: () => context.push('/rooms/${rooms[index].roomId}'),
                     );
                   },
                 );

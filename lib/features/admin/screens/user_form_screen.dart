@@ -59,6 +59,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving user: $e')));
     }
   }
@@ -96,7 +97,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
               validator: (value) => value == null || value.isEmpty ? 'Please enter phone' : null,
             ),
             DropdownButtonFormField<String>(
-              value: _role,
+              initialValue: _role,
               items: ['guest', 'user', 'admin'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
               onChanged: (val) => setState(() => _role = val!),
               decoration: const InputDecoration(labelText: 'Role'),
